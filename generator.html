@@ -1,0 +1,153 @@
+<!doctype html>
+<html>
+<head>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+<style>
+body {
+    background: #efefef;
+    margin: 20px;
+
+    background: #72808E;
+}
+#response {
+    height: 400px;
+}
+#response-row {
+    margin: 20px 0 0 0;
+    padding: 20px 0;
+    background: #333;
+    color: #999;
+}
+.test-row {
+    margin: 0;
+    padding: 20px 0;
+    background: #ccc;
+    color: #999;
+}
+#tests {
+    height: 400px;
+}
+#btt-row {
+    margin: 0;
+    padding: 20px 0;
+    background: #333;
+}
+h3 {
+    color: #eee;
+    margin-bottom: 30px;
+}
+</style>
+
+</head>
+
+<script type="application/json" id="template">
+pm.test("#PATH", function() {
+    var json = pm.response.json();
+    pm.expect(json#PATH).to.equal("#VALUE");
+})
+</script>
+
+<script type="application/json" id="template-null">
+pm.test("#PATH", function() {
+    var json = pm.response.json();
+    pm.expect(json#PATH).to.equal(null);
+})
+</script>
+
+<script type="application/json" id="template-number">
+pm.test("#PATH", function() {
+    var json = pm.response.json();
+    pm.expect(json#PATH).to.equal(#VALUE);
+})
+</script>
+
+<body>
+    <div class="container">
+        <div class="row" id="response-row">
+            <div class="col-md-8 offset-md-2">
+                <h3>Postman Test Cases Generators</h3>
+                Paste your expected JSON response here
+            </div>
+            <div class="col-md-8 offset-md-2">
+                <textarea id="response" class="form-control"></textarea>
+            </div>
+        </div>
+
+        <div class="row" id="btt-row">
+            <div class="col-md-8 offset-md-2">
+                <button class="button" id="gen">Generate test cases</button>
+            </div>
+        </div>
+
+        <div class="row test-row">
+            <div class="col-md-8 offset-md-2">
+                Postman test cases
+                <textarea id="tests" class="form-control" disabled></textarea>
+            </div>
+        </div>
+
+
+    </div>
+
+
+
+</body>
+
+<script>
+
+var template = $("#template").text();
+var templateNull = $("#template-null").text();
+var templateNumber = $("#template-number").text();
+
+function parse(o, path) {
+    if (o == null) {
+        var s = templateNull.replace(/#PATH/g, path);
+        var t = $("#tests").val() + "\n";
+        $("#tests").val(t + s);
+        return;
+    }
+
+    if (typeof o == "number") {
+        var s = templateNumber.replace(/#PATH/g, path).replace(/#VALUE/g, o);
+        var t = $("#tests").val() + "\n";
+        $("#tests").val(t + s);
+        return;
+    }
+
+
+    if (typeof o == "string") {
+        var s = template.replace(/#PATH/g, path).replace(/#VALUE/g, o);
+        var t = $("#tests").val() + "\n";
+        $("#tests").val(t + s);
+        return;
+    }
+    if (Array.isArray(o)) {
+        for (var i = 0; i < o.length; i++ ) {
+            parse(o[i], path + "[" + i + "]");
+        }
+        return;
+    }
+
+    // it is object
+    for (const [k, v] of Object.entries(o)) {
+        console.log(k);
+        parse(v, path + "." + k);
+    }
+}
+
+$(document).ready(function() {
+    $("#gen").click(function() {
+        $json = $("#response").val();
+        try {
+            var o = JSON.parse($json);
+            $("#tests").val("");
+            parse(o, "");
+        } catch(e) {
+             alert(e);
+        }
+    });
+});
+</script>
+
+</html>
